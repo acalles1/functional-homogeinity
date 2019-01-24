@@ -6,6 +6,6 @@ Functional data analysis is an area of statistics that provides informations abo
 
 ## Bibliography
 
-Flores, R., Lillo, R., & Romo, J. 2018. Homogeinity test for functional data. Journal of Applied Statistics, 1(1), 1-16.
+Flores, R., Lillo, R., & Romo, J. 2018. Homogeinity test for functional data. Journal of Applied Statistics, 45(5), 868-883.
 
 Ramsay, J.O., & Silverman, B. W. 2005. Functional Data Analysis. Springer Series in Statistics. Springer. 
