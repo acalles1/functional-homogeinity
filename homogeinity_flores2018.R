@@ -214,7 +214,7 @@ Tester <- function(J, G, B=1000, stat=P4, depth.function=depth.FM, nc=4){
   ub <- max(trimmed)
   if (lb <= trueP4 && trueP4 <= ub){
     return(TRUE)
-  }else{
+  } else{
     return(FALSE)
   }
 }
