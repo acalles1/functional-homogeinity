@@ -108,7 +108,6 @@ Tester <- function(J, G, B=1000, depth.function=depth.FM, nc=4){
   depy <- depths.inJ$dep
   depx <- depths.inG$dep
   lm.ori <- lm(depy ~ depx)
-  plot(depx, depy)
   b1.ori <- lm.ori$coefficients[2]
   b0.ori <- lm.ori$coefficients[1]
   stats <- Bootstrapper(J, G, B=1000, depth.function=depth.function, nc=nc)
