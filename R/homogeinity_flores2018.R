@@ -12,7 +12,6 @@
 # TODO(acalles): depth.RT does not work in P1-P4. Need to raise an error and a
 # stop when the user tries to use this depth.
 
-source("generate_curves.R")
 library(fda.usc)
 library(parallel)
 
@@ -183,12 +182,3 @@ Tester_Flores <- function(J, G, B=1000, stat=P4, depth.function=depth.FM, nc=4){
     return(FALSE)
   }
 }
-
-# Example usage (non-homogeneous):
-
-S <- GenerateCurves()
-S0 <- S[[1]]
-S1 <- S[[4]]
-J <- fdata(S0)
-G <- fdata(S1)
-res <- Tester_Flores(J, G, nc=8, stat=P2, depth.function=depth.mode)
