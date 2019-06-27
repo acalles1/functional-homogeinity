@@ -1,4 +1,12 @@
-rm(list=ls())
+# 
+# Author: Alejandro Calle Saldarriaga. 27-06-2019.
+# 
+# This file implements an original homogeinity test for functional data, based on
+# the ideas in [Liu et al., 1999]. 
+# The function here are:
+# Bootstrapper, which implements a resampling scheme for our statistic.
+# Tester, which uses the boostrapped statistics to reject or not reject the test.
+
 library(fda.usc)
 library(parallel)
 library(car)
