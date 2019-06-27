@@ -3,6 +3,8 @@
 
 Functional data analysis is an area of statistics that provides informations about curves or functions (i.e. the elements of the sample are functions) [Ramsey, 2005]. An homogeinity test is an statistical test that tries to tell if two samples come from the same population. The idea of this project is to propose an homogeinity test for functional data, as in [Flores et al., 2018]. We will try to perform better than the aforementioned test, using some metrics we will define in the future. We will be basing our test in the ideas presented in [Liu et al., 1999].
 
+This repository contains some example images that are mentioned in an article I submitted to the XXIX Simposio Internacional de Estadística.
+
 ## Bibliography
 
 Flores, R., Lillo, R., & Romo, J. 2018. Homogeinity test for functional data. Journal of Applied Statistics, 45(5), 868-883.
