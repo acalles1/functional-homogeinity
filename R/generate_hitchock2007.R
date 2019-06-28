@@ -1,7 +1,7 @@
 library(pracma)
 library(MASS)
 
-GenerateCurves_Hitchcock <- function(sigma2=1, beta=1){
+GenerateCurves.Hitchcock <- function(sigma2=1, beta=1){
   # Generate the curves described in Hitchcock et al. [2007] for homogeinity tests.
   #
   # Args:
@@ -65,7 +65,7 @@ GenerateCurves_Hitchcock <- function(sigma2=1, beta=1){
 }
 
 # Debugging
-#S <- GenerateCurves()
+#S <- GenerateCurves.Hitchcock()
 #ts <- linspace(0, 5, n = 50) 
 #S1 <- S[[1]]
 #S2 <- S[[2]]
