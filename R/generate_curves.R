@@ -22,9 +22,9 @@ GenerateCurves <- function(){
   # is another realization of the reference sample.
   #
   # Number of observations for each curve.
-  kNs = 30
+  kNs <- 30
   # Number of curves.
-  kNc = 50
+  kNc <- 50
   # 30 equidistant points (ts = timesteps).
   ts <- linspace(0, 1, n = kNs) 
   # Initialize covariance matrix for first e(t) with zeroes.
