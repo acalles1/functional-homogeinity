@@ -1,8 +1,8 @@
-# 
+#
 # Author: Alejandro Calle Saldarriaga. 27-06-2019.
-# 
+#
 # This file implements an original homogeinity test for functional data, based on
-# the ideas in [Liu et al., 1999]. 
+# the ideas in [Liu et al., 1999].
 # The function here are:
 # Bootstrapper, which implements a resampling scheme for our statistic.
 # Tester, which uses the boostrapped statistics to reject or not reject the test.
@@ -11,6 +11,7 @@ library(fda.usc)
 library(parallel)
 library(car)
 library(pracma)
+source("generate_curves.R")
 
 Bootstrapper <- function(J, G, B=1000, depth.function=depth.FM, nc = 4){
   # Computes the bootstrap statistics parallely.
@@ -54,14 +55,14 @@ Bootstrapper <- function(J, G, B=1000, depth.function=depth.FM, nc = 4){
   clusterEvalQ(cl, library(fda.usc))
   #parSapply to obtain a vector.
   bs <- parSapply(cl, seq_len(B), function(i){
-    #Resample and compute the statistic. 
+    #Resample and compute the statistic.
     Hs <- H[sample(1:kH,size=kH,replace=TRUE),]
     Js <- Hs[1:kN, ]
     aux <- kN + 1
-    #Next kH functions in H are the functions in the resampled version of H. 
+    #Next kH functions in H are the functions in the resampled version of H.
     Gs <- Hs[aux:kH, ]
     #Resampled depths
-    depths.inJs <- depth.function(Hs, fdataori=Js, trim = 0) 
+    depths.inJs <- depth.function(Hs, fdataori=Js, trim = 0)
     depths.inGs <- depth.function(Hs, fdataori=Gs, trim = 0)
     depys <- depths.inJs$dep
     depxs <- depths.inGs$dep
@@ -74,8 +75,8 @@ Bootstrapper <- function(J, G, B=1000, depth.function=depth.FM, nc = 4){
     # regression analysis.
     beta1.std <- sqrt((sum(lm.bs$residuals^2))/((kH-2)*sum_aux))
     beta0.std <- sqrt((sum(lm.bs$residuals^2)*sum(depxs^2))/((kH-2)*sum_aux))
-    t1 <- (beta1 - 1)/beta1.std
-    t0 <- (beta0)/beta0.std
+    t1 <- (beta1 - b1.ori)/beta1.std
+    t0 <- (beta0 - b0.ori)/beta0.std
     x <- c(beta0, beta1, t0, t1)
   }
   )
@@ -99,7 +100,7 @@ Tester <- function(J, G, B=1000, depth.function=depth.FM, nc=4){
   #
   # Returns:
   # TRUE if we do not reject the H0, meaning that J and G come from the same
-  # population. False is we reject the H0, meaning that J and G are not 
+  # population. False is we reject the H0, meaning that J and G are not
   # homogeneous and come from different populations.
   #
   H <- c(J, G)
@@ -119,10 +120,9 @@ Tester <- function(J, G, B=1000, depth.function=depth.FM, nc=4){
   # 5% cutoff (2.5% upper and lower).
   cvalb0 <- quantile(t0, probs=c(0.025, 0.975))
   cvalb1 <- quantile(t1, probs=c(0.025, 0.975))
-  beta0.l <- b0.ori - cvalb0[2]*sqrt(var(b0))
-  beta0.u <- b0.ori - cvalb0[1]*sqrt(var(b0))
-  beta1.l <- b1.ori - cvalb1[2]*sqrt(var(b1))
-  beta1.u <- b1.ori - cvalb1[1]*sqrt(var(b1))
-  return(beta1.l <= 1 && beta1.u >= 1) 
+  beta0.l <- mean(b0) - cvalb0[2]*sqrt(var(b0))
+  beta0.u <- mean(b0) - cvalb0[1]*sqrt(var(b0))
+  beta1.l <- mean(b1) - cvalb1[2]*sqrt(var(b1))
+  beta1.u <- mean(b1) - cvalb1[1]*sqrt(var(b1))
+  return(beta1.l <= 1 && beta1.u >= 1)
 }
-
