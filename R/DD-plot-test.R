@@ -11,9 +11,8 @@ library(fda.usc)
 library(parallel)
 library(car)
 library(pracma)
-source("generate_curves.R")
 
-Bootstrapper <- function(J, G, B=1000, depth.function=depth.FM, nc = 4){
+Bootstrapper <- function(J, G, B=1000, depth.function=depth.FM){
   # Computes the bootstrap statistics parallely.
   #
   # Args:
@@ -38,8 +37,7 @@ Bootstrapper <- function(J, G, B=1000, depth.function=depth.FM, nc = 4){
   kN <- length(J)
   kM <- length(G)
   kH <- kN + kM
-  cl <- makeCluster(nc)
-  bs <- numeric(B)
+  #cl <- makeCluster(nc)
   depths.inJ <- depth.function(H, fdataori=J, trim = 0) #with trim = 0.25
   depths.inG <- depth.function(H, fdataori=G, trim = 0)
   depy <- depths.inJ$dep
@@ -47,14 +45,11 @@ Bootstrapper <- function(J, G, B=1000, depth.function=depth.FM, nc = 4){
   lm.ori <- lm(depy ~ depx)
   b1.ori <- lm.ori$coefficients[2]
   b0.ori <- lm.ori$coefficients[1]
-  #Need to export the global enviroment to the cluster environment
-  clusterExport(cl=cl, list("J", "G", "nc", "depth.function", "H", "kN",
-                            "kM", "kH", "b1.ori", "b0.ori"), envir=environment())
-  #Need to export the libraries used to the cluster.
-  clusterEvalQ(cl, library(pracma))
-  clusterEvalQ(cl, library(fda.usc))
-  #parSapply to obtain a vector.
-  bs <- parSapply(cl, seq_len(B), function(i){
+  beta0 <- numeric(B)
+  beta1 <- numeric(B)
+  t0 <- numeric(B)
+  t1 <- numeric(B)
+  for (i in 1:B){
     #Resample and compute the statistic.
     Hs <- H[sample(1:kH,size=kH,replace=TRUE),]
     Js <- Hs[1:kN, ]
@@ -68,23 +63,25 @@ Bootstrapper <- function(J, G, B=1000, depth.function=depth.FM, nc = 4){
     depxs <- depths.inGs$dep
     lm.bs <- lm(depys ~ depxs)
     # Betas
-    beta1 <- lm.bs$coefficients[2]
-    beta0 <- lm.bs$coefficients[1]
+    beta1[i] <- lm.bs$coefficients[2]
+    beta0[i] <- lm.bs$coefficients[1]
     sum_aux <- sum((depxs - mean(depxs))^2)
     # Formula for the standard deviation of both betas. Standard formula from
     # regression analysis.
     beta1.std <- sqrt((sum(lm.bs$residuals^2))/((kH-2)*sum_aux))
     beta0.std <- sqrt((sum(lm.bs$residuals^2)*sum(depxs^2))/((kH-2)*sum_aux))
-    t1 <- (beta1 - b1.ori)/beta1.std
-    t0 <- (beta0 - b0.ori)/beta0.std
-    x <- c(beta0, beta1, t0, t1)
-  }
-  )
-  stopCluster(cl)
-  return(bs)
+    t1[i] <- (beta1[i] - b1.ori)/beta1.std
+    t0[i] <- (beta0[i] - b0.ori)/beta0.std
+    }
+  stats <- list()
+  stats$b0 <- beta0
+  stats$b1 <- beta1
+  stats$t0 <- t0
+  stats$t1 <- t1
+  return(stats)
 }
 
-Tester <- function(J, G, B=1000, depth.function=depth.FM, nc=4){
+Tester <- function(J, G, B=1000, depth.function=depth.FM){
   # Tests homogeinity using bootstrap confidence intervals. H0: Homogeinity.
   #
   # Args:
@@ -111,12 +108,12 @@ Tester <- function(J, G, B=1000, depth.function=depth.FM, nc=4){
   lm.ori <- lm(depy ~ depx)
   b1.ori <- lm.ori$coefficients[2]
   b0.ori <- lm.ori$coefficients[1]
-  stats <- Bootstrapper(J, G, B=1000, depth.function=depth.function, nc=nc)
+  stats <- Bootstrapper(J, G, B=B, depth.function=depth.function)
   # Extract all statistics from the bootstrapper.
-  b0 <- stats[1,]
-  b1 <- stats[2,]
-  t0 <- stats[3,]
-  t1 <- stats[4,]
+  b0 <- stats$b0
+  b1 <- stats$b1
+  t0 <- stats$t0
+  t1 <- stats$t1
   # 5% cutoff (2.5% upper and lower).
   cvalb0 <- quantile(t0, probs=c(0.025, 0.975))
   cvalb1 <- quantile(t1, probs=c(0.025, 0.975))
