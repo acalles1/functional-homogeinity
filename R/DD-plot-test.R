@@ -70,8 +70,8 @@ Bootstrapper <- function(J, G, B=1000, depth.function=depth.FM){
     # regression analysis.
     beta1.std <- sqrt((sum(lm.bs$residuals^2))/((kH-2)*sum_aux))
     beta0.std <- sqrt((sum(lm.bs$residuals^2)*sum(depxs^2))/((kH-2)*sum_aux))
-    t1[i] <- (beta1[i] - b1.ori)/beta1.std
-    t0[i] <- (beta0[i] - b0.ori)/beta0.std
+    t1[i] <- (beta1[i] - 1)/beta1.std
+    t0[i] <- (beta0[i])/beta0.std
     }
   stats <- list()
   stats$b0 <- beta0
@@ -101,6 +101,9 @@ Tester <- function(J, G, B=1000, depth.function=depth.FM){
   # homogeneous and come from different populations.
   #
   H <- c(J, G)
+  kN <- length(J)
+  kM <- length(G)
+  kH <- kN + kM
   depths.inJ <- depth.function(H, fdataori=J, trim = 0) #with trim = 0.25
   depths.inG <- depth.function(H, fdataori=G, trim = 0)
   depy <- depths.inJ$dep
@@ -114,12 +117,21 @@ Tester <- function(J, G, B=1000, depth.function=depth.FM){
   b1 <- stats$b1
   t0 <- stats$t0
   t1 <- stats$t1
+  sum_aux <- sum((depx - mean(depx))^2)
+  beta1.std <- sqrt((sum(lm.ori$residuals^2))/((kH-2)*sum_aux))
+  beta0.std <- sqrt((sum(lm.ori$residuals^2)*sum(depx^2))/((kH-2)*sum_aux)) 
   # 5% cutoff (2.5% upper and lower).
   cvalb0 <- quantile(t0, probs=c(0.025, 0.975))
   cvalb1 <- quantile(t1, probs=c(0.025, 0.975))
-  beta0.l <- mean(b0) - cvalb0[2]*sqrt(var(b0))
-  beta0.u <- mean(b0) - cvalb0[1]*sqrt(var(b0))
-  beta1.l <- mean(b1) - cvalb1[2]*sqrt(var(b1))
-  beta1.u <- mean(b1) - cvalb1[1]*sqrt(var(b1))
-  return(beta1.l <= 1 && beta1.u >= 1)
+  beta0.l <- b0.ori - cvalb0[2]*beta0.std
+  beta0.u <- b0.ori - cvalb0[1]*beta0.std
+  beta1.l <- b1.ori - cvalb1[2]*beta1.std
+  beta1.u <- b1.ori - cvalb1[1]*beta1.std
+  #print('beta1')
+  #print(beta1.l)
+  #print(beta1.u)
+  #print('beta0')
+  #print(beta0.l)
+  #print(beta0.u)
+  return(beta1.l <= 1 && beta1.u >= 1 && beta0.l <= 0 && beta0.u >= 0)
 }
