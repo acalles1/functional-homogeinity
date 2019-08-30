@@ -12,6 +12,8 @@ library(parallel)
 library(car)
 library(pracma)
 
+source("generate_curves.R")
+
 Bootstrapper <- function(J, G, B=1000, depth.function=depth.FM){
   # Computes the bootstrap statistics parallely.
   #
@@ -98,8 +100,7 @@ Tester <- function(J, G, B=1000, depth.function=depth.FM){
   # Returns:
   # TRUE if we do not reject the H0, meaning that J and G come from the same
   # population. False is we reject the H0, meaning that J and G are not
-  # homogeneous and come from different populations.
-  #
+  # homogeneous and come from different popula 
   H <- c(J, G)
   kN <- length(J)
   kM <- length(G)
@@ -119,7 +120,21 @@ Tester <- function(J, G, B=1000, depth.function=depth.FM){
   t1 <- stats$t1
   sum_aux <- sum((depx - mean(depx))^2)
   beta1.std <- sqrt((sum(lm.ori$residuals^2))/((kH-2)*sum_aux))
-  beta0.std <- sqrt((sum(lm.ori$residuals^2)*sum(depx^2))/((kH-2)*sum_aux)) 
+  T.Test1 <- (b1.ori - 1)/beta1.std
+  dist.t1 <- ecdf(t1)
+  neg.T1 <- min(T.Test1, -T.Test1)
+  p1.half.neg <- dist.t1(neg.T1)
+  p1.half.pos <- 1.0 - dist.t1(-neg.T1)
+  p1 <- p1.half.neg + p1.half.neg
+  beta0.std <- sqrt((sum(lm.ori$residuals^2)*sum(depx^2))/((kH-2)*sum_aux))
+  T.Test0 <- b0.ori/beta0.std
+  dist.t0 <- ecdf(t0)
+  neg.T0 <- min(T.Test0, -T.Test0)
+  p0.half.neg <- dist.t0(neg.T0)
+  p0.half.pos <- 1.0 - dist.t0(-neg.T0)
+  p0 <- p0.half.neg + p0.half.pos
+  p <- min(p0, p1)
+  print(p)
   # 5% cutoff (2.5% upper and lower).
   cvalb0 <- quantile(t0, probs=c(0.025, 0.975))
   cvalb1 <- quantile(t1, probs=c(0.025, 0.975))
@@ -133,5 +148,9 @@ Tester <- function(J, G, B=1000, depth.function=depth.FM){
   #print('beta0')
   #print(beta0.l)
   #print(beta0.u)
-  return(beta1.l <= 1 && beta1.u >= 1 && beta0.l <= 0 && beta0.u >= 0)
+  res <- beta1.l <= 1 && beta1.u >= 1 && beta0.l <= 0 && beta0.u >= 0
+  returns <- list()
+  returns$res <- res
+  returns$p <- p
+  return(returns)
 }
