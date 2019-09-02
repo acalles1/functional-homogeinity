@@ -12,7 +12,7 @@ library(parallel)
 library(car)
 library(pracma)
 
-source("generate_curves.R")
+#source("generate_curves.R")
 
 Bootstrapper <- function(J, G, B=1000, depth.function=depth.FM){
   # Computes the bootstrap statistics parallely.
@@ -136,21 +136,19 @@ Tester <- function(J, G, B=1000, depth.function=depth.FM){
   p <- min(p0, p1)
   print(p)
   # 5% cutoff (2.5% upper and lower).
-  cvalb0 <- quantile(t0, probs=c(0.025, 0.975))
-  cvalb1 <- quantile(t1, probs=c(0.025, 0.975))
-  beta0.l <- b0.ori - cvalb0[2]*beta0.std
-  beta0.u <- b0.ori - cvalb0[1]*beta0.std
-  beta1.l <- b1.ori - cvalb1[2]*beta1.std
-  beta1.u <- b1.ori - cvalb1[1]*beta1.std
-  #print('beta1')
-  #print(beta1.l)
-  #print(beta1.u)
-  #print('beta0')
-  #print(beta0.l)
-  #print(beta0.u)
-  res <- beta1.l <= 1 && beta1.u >= 1 && beta0.l <= 0 && beta0.u >= 0
+  t0crit <- quantile(t0, probs=c(0.025, 0.975))
+  t1crit <- quantile(t1, probs=c(0.025, 0.975))
+  beta0.l <- b0.ori - t0crit[2]*beta0.std
+  beta0.u <- b0.ori - t0crit[1]*beta0.std
+  beta1.l <- b1.ori - t1crit[2]*beta1.std
+  beta1.u <- b1.ori - t1crit[1]*beta1.std
+  res <- t0crit[1] <= T.Test0 && t0crit[2] >= T.Test0 && t1crit[1] <= T.Test1 && t1crit[2] >= T.Test1
   returns <- list()
   returns$res <- res
   returns$p <- p
+  returns$t0crit <- t0crit
+  returns$t1crit <- t1crit
+  returns$T1 <- T.Test1
+  returns$T0 <- T.Test0
   return(returns)
 }
