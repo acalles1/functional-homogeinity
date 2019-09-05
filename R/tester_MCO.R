@@ -8,13 +8,13 @@ data(MCO)
 control <- MCO$intact[MCO$classintact==1]
 treatment <- MCO$intact[MCO$classintact==2]
 
-res_flores <- Tester_Flores(control, treatment, B=1000, stat=P4, depth.function = depth.FM, nc=3)
-res_dd <- Tester(control, treatment, B=1000, depth.function = depth.FM, nc = 3)
-res_dd_hmodal <- Tester(control, treatment, B=1000, depth.function = depth.mode, nc = 3)
+res_flores <- Tester_Flores(control, treatment, B=1000, stat=P4, depth.function = depth.FM)
+res_dd <- Tester(control, treatment, B=1000, depth.function = depth.FM)
+res_dd_rp <- Tester(control, treatment, B=1000, depth.function = depth.RP)
 
 print('The result with Flores Test is')
 print(res_flores)
 print('The result with DD-FM test is')
 print(res_dd)
-print('The result with DD-hm test is')
-print(res_dd_hmodal)
+print('The result with DD-RP test is')
+print(res_dd_rp)
