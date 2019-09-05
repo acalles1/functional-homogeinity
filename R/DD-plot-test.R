@@ -134,7 +134,6 @@ Tester <- function(J, G, B=1000, depth.function=depth.FM){
   p0.half.pos <- 1.0 - dist.t0(-neg.T0)
   p0 <- p0.half.neg + p0.half.pos
   p <- min(p0, p1)
-  print(p)
   # 5% cutoff (2.5% upper and lower).
   t0crit <- quantile(t0, probs=c(0.025, 0.975))
   t1crit <- quantile(t1, probs=c(0.025, 0.975))
