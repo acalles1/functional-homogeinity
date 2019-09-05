@@ -77,6 +77,47 @@ GenerateCurves <- function(){
   
 }
 
+Generator <- function(delta=0, k=0.3, c=10/3){
+  # Generate the curves described in Flores et al. [2018] for homogeinity tests.
+  #
+  # Args:
+  # none
+  # 
+  # Returns:
+  #
+  # S, a list with each of the samples, where the first one is the reference 
+  # sample (S0), the next 5 ones are the other samples, and the last one
+  # is another realization of the reference sample.
+  #
+  # Number of observations for each curve.
+  kNs <- 30
+  # Number of curves.
+  kNc <- 50
+  # 30 equidistant points (ts = timesteps).
+  ts <- linspace(0, 1, n = kNs) 
+  # Initialize covariance matrix for first e(t) with zeroes.
+  cov.e <- matrix(rep(0, len=kNs*kNs), nrow=kNs, ncol=kNs)
+  # Initializ covariance matrix for h(t) with zeroes.
+  E1 <- numeric(kNs)
+  # Fill up covariances and expected values as described in the paper.
+  for (i in 1:kNs) {
+    E1[i] <- 30*ts[i]^(3/2)*(1 - ts[i])
+    for (j in 1:kNs) {
+      cov.e[i,j] <- k*exp(-c*(abs(ts[i] - ts[j])))
+    } 
+  }
+  E2 <- E1 + delta
+  # Vector of zeros, all gaussians simualations will be centered around 0 so
+  # we need this vector for later.
+  mu <- numeric(kNs)
+  # Sample 0 error simulation with mean 0 and covariance as in cove.
+  e.S <- mvrnorm(n = kNc, mu=mu, Sigma=cov.e) 
+  S <- sweep(e.S, 2, E2, "+")
+  
+  return(S)
+  
+}
+
 # Debugging: see if this code works. Lets try with Sample 0 and Sample 3.
 # You can manually change the samples if you want to try if the other
 # samples are correctly computed. I have already manually checked that and
