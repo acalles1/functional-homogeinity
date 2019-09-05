@@ -11,9 +11,9 @@ female <- t(growth$hgtf)
 fmale <- fdata(male)
 ffemale <- fdata(female)
 
-res_flores <- Tester_Flores(fmale, ffemale, B=1000, stat=P4, depth.function = depth.FM, nc=3)
-res_dd <- Tester(fmale, ffemale, B=1000, depth.function = depth.FM, nc = 3)
-res_dd_hmodal <- Tester(fmale, ffemale, B=1000, depth.function = depth.mode, nc = 3)
+res_flores <- Tester_Flores(fmale, ffemale, B=1000, stat=P4, depth.function = depth.FM)
+res_dd <- Tester(fmale, ffemale, B=1000, depth.function = depth.FM)
+res_dd_hmodal <- Tester(fmale, ffemale, B=1000, depth.function = depth.mode)
 
 print('The result with Flores Test is')
 print(res_flores)
