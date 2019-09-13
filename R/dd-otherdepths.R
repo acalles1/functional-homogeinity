@@ -15,7 +15,7 @@ library(ddalpha)
 
 #source("generate_curves.R")
 
-Bootstrapper <- function(J, G, B=1000, depth.function=depthf.ABD){
+Bootstrapper.od <- function(J, G, B=1000, depth.function=depthf.fd1){
   # Computes the bootstrap statistics parallely.
   #
   # Args:
@@ -41,10 +41,10 @@ Bootstrapper <- function(J, G, B=1000, depth.function=depthf.ABD){
   Hf <- rawfd2dataf(Hh, c(0,1))
   Jf <- rawfd2dataf(J, c(0,1))
   Gf <- rawfd2dataf(G, c(0,1))
-  depths.inJ <- depth.function(Hf, Jf, range=c(0,1), d=30, K=2, norm='L2')
-  depths.inG <- depth.function(Hf, Gf, range=c(0,1), d=30, K=2, norm='L2')
-  depy <- depths.inJ
-  depx <- depths.inG
+  depths.inJ <- depth.function(Hf, Jf, range=c(0,1), d=30, order = 2, approx=150)
+  depths.inG <- depth.function(Hf, Gf, range=c(0,1), d=30, order = 2, approx=150)
+  depy <- depths.inJ$Half_FD
+  depx <- depths.inG$Half_FD
   lm.ori <- lm(depy ~ depx)
   b1.ori <- lm.ori$coefficients[2]
   b0.ori <- lm.ori$coefficients[1]
@@ -52,6 +52,9 @@ Bootstrapper <- function(J, G, B=1000, depth.function=depthf.ABD){
   beta1 <- numeric(B)
   t0 <- numeric(B)
   t1 <- numeric(B)
+  kH <- dim(Hh)[1]
+  kN <- dim(J)[1]
+  kM <- dim(G)[1]
   for (i in 1:B){
     #print(i)
     #Resample and compute the statistic.
@@ -63,11 +66,11 @@ Bootstrapper <- function(J, G, B=1000, depth.function=depthf.ABD){
     Gs <- Hs[aux:kH, ]
     Jfs <- rawfd2dataf(Js, c(0,1))
     Gfs <- rawfd2dataf(Gs, c(0,1))
-    #Resampled depths
-    depths.inJs <- depth.function(Hsf, Jfs, range=c(0,1), d=30, K=2, norm='L2')
-    depths.inGs <- depth.function(Hsf, Gfs, range=c(0,1), d=30, K=2, norm='L2')
-    depys <- depths.inJs
-    depxs <- depths.inGs
+    #Resampled depth, s
+    depths.inJs <- depth.function(Hsf, Jfs, range=c(0,1), d=30, order = 2, approx=150)
+    depths.inGs <- depth.function(Hsf, Gfs, range=c(0,1), d=30, order = 2, approx=150)
+    depys <- depths.inJs$Half_FD
+    depxs <- depths.inGs$Half_FD
     lm.bs <- lm(depys ~ depxs)
     # Betas
     beta1[i] <- lm.bs$coefficients[2]
@@ -88,7 +91,7 @@ Bootstrapper <- function(J, G, B=1000, depth.function=depthf.ABD){
   return(stats)
 }
 
-Tester <- function(J, G, B=1000, depth.function=depthf.ABD){
+Tester.od <- function(J, G, B=1000, depth.function=depthf.fd1){
   # Tests homogeinity using bootstrap confidence intervals. H0: Homogeinity.
   #
   # Args:
@@ -107,17 +110,18 @@ Tester <- function(J, G, B=1000, depth.function=depthf.ABD){
   # population. False is we reject the H0, meaning that J and G are not
   # homogeneous and come from different popula 
   Hh <- rbind(J, G)
+  kH <- dim(Hh)[1]
   Hf <- rawfd2dataf(Hh, c(0,1))
   Jf <- rawfd2dataf(J, c(0,1))
   Gf <- rawfd2dataf(G, c(0,1))
-  depths.inJ <- depth.function(Hf, Jf, range=c(0,1), d=30, K=2, norm='L2')
-  depths.inG <- depth.function(Hf, Gf, range=c(0,1), d=30, K=2, norm='L2')
-  depy <- depths.inJ
-  depx <- depths.inG
+  depths.inJ <- depth.function(Hf, Jf, range=c(0,1), d=30, order = 2, approx=150)
+  depths.inG <- depth.function(Hf, Gf, range=c(0,1), d=30, order = 2, approx=150)
+  depy <- depths.inJ$Half_FD
+  depx <- depths.inG$Half_FD
   lm.ori <- lm(depy ~ depx)
   b1.ori <- lm.ori$coefficients[2]
   b0.ori <- lm.ori$coefficients[1]
-  stats <- Bootstrapper(J, G, B=B, depth.function=depth.function)
+  stats <- Bootstrapper.od(J, G, B=B, depth.function=depth.function)
   # Extract all statistics from the bootstrapper.
   b0 <- stats$b0
   b1 <- stats$b1
@@ -156,17 +160,3 @@ Tester <- function(J, G, B=1000, depth.function=depthf.ABD){
   returns$T0 <- T.Test0
   return(returns)
 }
-
-source("generate_curves.R")
-K <- 10
-tests <- numeric(K)
-for (i in 1:K){
-  print(i)
-  S <- GenerateCurves()
-  S0 <- S[[1]]
-  S1 <- S[[7]]
-  J <- S0
-  G <- S1
-  tests[i] <- Tester(J, G, B=1000)
-}
-1 - sum(tests)/K
