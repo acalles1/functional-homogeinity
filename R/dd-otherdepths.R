@@ -7,15 +7,15 @@
 # Bootstrapper, which implements a resampling scheme for our statistic.
 # Tester, which uses the boostrapped statistics to reject or not reject the test.
 
+library(ddalpha)
 library(fda.usc)
 library(parallel)
 library(car)
 library(pracma)
-library(ddalpha)
 
 #source("generate_curves.R")
 
-Bootstrapper.od <- function(J, G, B=1000, depth.function=depthf.fd1){
+Bootstrapper.od <- function(J, G, B=1000, depth.function=depthf.fd1, range=c(0,1)){
   # Computes the bootstrap statistics parallely.
   #
   # Args:
@@ -36,13 +36,19 @@ Bootstrapper.od <- function(J, G, B=1000, depth.function=depthf.fd1){
   # used it. If you want to experiment with beta1 and beta0 simulataneously
   # its quite easy as the t-values for beta0 are computed here too.
   #
-  #cl <- makeCluster(nc)
   Hh <- rbind(J, G)
-  Hf <- rawfd2dataf(Hh, c(0,1))
-  Jf <- rawfd2dataf(J, c(0,1))
-  Gf <- rawfd2dataf(G, c(0,1))
-  depths.inJ <- depth.function(Hf, Jf, range=c(0,1), d=30, order = 2, approx=150)
-  depths.inG <- depth.function(Hf, Gf, range=c(0,1), d=30, order = 2, approx=150)
+  kH <- dim(Hh)[1]
+  kN <- dim(J)[1]
+  kS <- dim(Hh)[2]
+  kM <- dim(G)[1]
+  Hf <- rawfd2dataf(Hh, range)
+  Jf <- rawfd2dataf(J, range)
+  Gf <- rawfd2dataf(G, range)
+  apr <- kS*kS/4 # The 2d depth is to computationally
+  # intense, only gonna approximate it by evaluating it in a fourth
+  # of the total points.
+  depths.inJ <- depth.function(Hf, Jf, d=kS, range=range, order=2, approx=apr)
+  depths.inG <- depth.function(Hf, Gf, d=kS, range=range, order=2, approx=apr)
   depy <- depths.inJ$Half_FD
   depx <- depths.inG$Half_FD
   lm.ori <- lm(depy ~ depx)
@@ -52,23 +58,20 @@ Bootstrapper.od <- function(J, G, B=1000, depth.function=depthf.fd1){
   beta1 <- numeric(B)
   t0 <- numeric(B)
   t1 <- numeric(B)
-  kH <- dim(Hh)[1]
-  kN <- dim(J)[1]
-  kM <- dim(G)[1]
   for (i in 1:B){
     #print(i)
     #Resample and compute the statistic.
     Hs <- Hh[sample(1:kH,size=kH,replace=TRUE),]
-    Hsf <- rawfd2dataf(Hs, c(0,1))
+    Hsf <- rawfd2dataf(Hs, range)
     Js <- Hs[1:kN, ]
     aux <- kN + 1
     #Next kH functions in H are the functions in the resampled version of H.
     Gs <- Hs[aux:kH, ]
-    Jfs <- rawfd2dataf(Js, c(0,1))
-    Gfs <- rawfd2dataf(Gs, c(0,1))
-    #Resampled depth, s
-    depths.inJs <- depth.function(Hsf, Jfs, range=c(0,1), d=30, order = 2, approx=150)
-    depths.inGs <- depth.function(Hsf, Gfs, range=c(0,1), d=30, order = 2, approx=150)
+    Jfs <- rawfd2dataf(Js, range)
+    Gfs <- rawfd2dataf(Gs, range)
+    #Resampled depths
+    depths.inJs <- depth.function(Hsf, Jfs, range=range, order=2, approx=apr)
+    depths.inGs <- depth.function(Hsf, Gfs, range=range, order=2, approx=apr)
     depys <- depths.inJs$Half_FD
     depxs <- depths.inGs$Half_FD
     lm.bs <- lm(depys ~ depxs)
@@ -108,20 +111,24 @@ Tester.od <- function(J, G, B=1000, depth.function=depthf.fd1){
   # Returns:
   # TRUE if we do not reject the H0, meaning that J and G come from the same
   # population. False is we reject the H0, meaning that J and G are not
-  # homogeneous and come from different popula 
+  # homogeneous and come from different population
   Hh <- rbind(J, G)
   kH <- dim(Hh)[1]
-  Hf <- rawfd2dataf(Hh, c(0,1))
-  Jf <- rawfd2dataf(J, c(0,1))
-  Gf <- rawfd2dataf(G, c(0,1))
-  depths.inJ <- depth.function(Hf, Jf, range=c(0,1), d=30, order = 2, approx=150)
-  depths.inG <- depth.function(Hf, Gf, range=c(0,1), d=30, order = 2, approx=150)
+  Hf <- rawfd2dataf(Hh, range)
+  kN <- dim(J)[1]
+  kM <- dim(G)[1]
+  kS <- dim(Hh)[2]
+  apr <- kS*kS/4
+  Jf <- rawfd2dataf(J, range)
+  Gf <- rawfd2dataf(G, range)
+  depths.inJ <- depth.function(Hf, Jf, range=range, d=kS, order=2, approx=apr)
+  depths.inG <- depth.function(Hf, Gf, range=range, d=kS, order=2, approx=apr)
   depy <- depths.inJ$Half_FD
   depx <- depths.inG$Half_FD
   lm.ori <- lm(depy ~ depx)
   b1.ori <- lm.ori$coefficients[2]
   b0.ori <- lm.ori$coefficients[1]
-  stats <- Bootstrapper.od(J, G, B=B, depth.function=depth.function)
+  stats <- Bootstrapper.od(J, G, B=B, depth.function=depth.function, range=range)
   # Extract all statistics from the bootstrapper.
   b0 <- stats$b0
   b1 <- stats$b1
