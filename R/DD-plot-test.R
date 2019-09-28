@@ -122,19 +122,16 @@ Tester <- function(J, G, B=1000, depth.function=depth.FM){
   beta1.std <- sqrt((sum(lm.ori$residuals^2))/((kH-2)*sum_aux))
   T.Test1 <- (b1.ori - 1)/beta1.std
   dist.t1 <- ecdf(t1)
-  neg.T1 <- min(T.Test1, -T.Test1)
-  p1.half.neg <- dist.t1(neg.T1)
-  p1.half.pos <- 1.0 - dist.t1(-neg.T1)
-  p1 <- p1.half.neg + p1.half.neg
+  p1.half1 <- dist.t1(T.Test1)
+  p1.half2 <- 1.0 - p1.half1
+  p1 <- 2*min(p.half1, p.half2)
   beta0.std <- sqrt((sum(lm.ori$residuals^2)*sum(depx^2))/((kH-2)*sum_aux))
   T.Test0 <- b0.ori/beta0.std
   dist.t0 <- ecdf(t0)
-  neg.T0 <- min(T.Test0, -T.Test0)
-  p0.half.neg <- dist.t0(neg.T0)
-  p0.half.pos <- 1.0 - dist.t0(-neg.T0)
-  p0 <- p0.half.neg + p0.half.pos
-  p <- min(p0, p1)
-  print(p)
+  p2.half1 <- dist.t0(T.Test0)
+  p2.half2 <- 1 - p2.half1
+  p2 <- 2*min(p2.half1, p2.half2)
+  p <- min(p1, p2)
   # 5% cutoff (2.5% upper and lower).
   t0crit <- quantile(t0, probs=c(0.025, 0.975))
   t1crit <- quantile(t1, probs=c(0.025, 0.975))

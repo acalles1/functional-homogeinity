@@ -7,11 +7,11 @@
 # Bootstrapper, which implements a resampling scheme for our statistic.
 # Tester, which uses the boostrapped statistics to reject or not reject the test.
 
-library(ddalpha)
 library(fda.usc)
 library(parallel)
 library(car)
 library(pracma)
+library(ddalpha)
 
 #source("generate_curves.R")
 
@@ -36,19 +36,13 @@ Bootstrapper.od <- function(J, G, B=1000, depth.function=depthf.fd1, range=c(0,1
   # used it. If you want to experiment with beta1 and beta0 simulataneously
   # its quite easy as the t-values for beta0 are computed here too.
   #
+  #cl <- makeCluster(nc)
   Hh <- rbind(J, G)
-  kH <- dim(Hh)[1]
-  kN <- dim(J)[1]
-  kS <- dim(Hh)[2]
-  kM <- dim(G)[1]
-  Hf <- rawfd2dataf(Hh, range)
-  Jf <- rawfd2dataf(J, range)
-  Gf <- rawfd2dataf(G, range)
-  apr <- kS*kS/4 # The 2d depth is to computationally
-  # intense, only gonna approximate it by evaluating it in a fourth
-  # of the total points.
-  depths.inJ <- depth.function(Hf, Jf, d=kS, range=range, order=2, approx=apr)
-  depths.inG <- depth.function(Hf, Gf, d=kS, range=range, order=2, approx=apr)
+  Hf <- rawfd2dataf(Hh, c(0,1))
+  Jf <- rawfd2dataf(J, c(0,1))
+  Gf <- rawfd2dataf(G, c(0,1))
+  depths.inJ <- depth.function(Hf, Jf, range=range, d=30, order = 2, approx=150)
+  depths.inG <- depth.function(Hf, Gf, range=range, d=30, order = 2, approx=150)
   depy <- depths.inJ$Half_FD
   depx <- depths.inG$Half_FD
   lm.ori <- lm(depy ~ depx)
@@ -58,20 +52,23 @@ Bootstrapper.od <- function(J, G, B=1000, depth.function=depthf.fd1, range=c(0,1
   beta1 <- numeric(B)
   t0 <- numeric(B)
   t1 <- numeric(B)
+  kH <- dim(Hh)[1]
+  kN <- dim(J)[1]
+  kM <- dim(G)[1]
   for (i in 1:B){
     #print(i)
     #Resample and compute the statistic.
     Hs <- Hh[sample(1:kH,size=kH,replace=TRUE),]
-    Hsf <- rawfd2dataf(Hs, range)
+    Hsf <- rawfd2dataf(Hs, c(0,1))
     Js <- Hs[1:kN, ]
     aux <- kN + 1
     #Next kH functions in H are the functions in the resampled version of H.
     Gs <- Hs[aux:kH, ]
-    Jfs <- rawfd2dataf(Js, range)
-    Gfs <- rawfd2dataf(Gs, range)
-    #Resampled depths
-    depths.inJs <- depth.function(Hsf, Jfs, range=range, order=2, approx=apr)
-    depths.inGs <- depth.function(Hsf, Gfs, range=range, order=2, approx=apr)
+    Jfs <- rawfd2dataf(Js, c(0,1))
+    Gfs <- rawfd2dataf(Gs, c(0,1))
+    #Resampled depth, s
+    depths.inJs <- depth.function(Hsf, Jfs, range=range, d=30, order = 2, approx=150)
+    depths.inGs <- depth.function(Hsf, Gfs, range=range, d=30, order = 2, approx=150)
     depys <- depths.inJs$Half_FD
     depxs <- depths.inGs$Half_FD
     lm.bs <- lm(depys ~ depxs)
@@ -94,7 +91,7 @@ Bootstrapper.od <- function(J, G, B=1000, depth.function=depthf.fd1, range=c(0,1
   return(stats)
 }
 
-Tester.od <- function(J, G, B=1000, depth.function=depthf.fd1){
+Tester.od <- function(J, G, B=1000, depth.function=depthf.fd1, range=c(0,1)){
   # Tests homogeinity using bootstrap confidence intervals. H0: Homogeinity.
   #
   # Args:
@@ -111,24 +108,20 @@ Tester.od <- function(J, G, B=1000, depth.function=depthf.fd1){
   # Returns:
   # TRUE if we do not reject the H0, meaning that J and G come from the same
   # population. False is we reject the H0, meaning that J and G are not
-  # homogeneous and come from different population
+  # homogeneous and come from different popula 
   Hh <- rbind(J, G)
   kH <- dim(Hh)[1]
-  Hf <- rawfd2dataf(Hh, range)
-  kN <- dim(J)[1]
-  kM <- dim(G)[1]
-  kS <- dim(Hh)[2]
-  apr <- kS*kS/4
-  Jf <- rawfd2dataf(J, range)
-  Gf <- rawfd2dataf(G, range)
-  depths.inJ <- depth.function(Hf, Jf, range=range, d=kS, order=2, approx=apr)
-  depths.inG <- depth.function(Hf, Gf, range=range, d=kS, order=2, approx=apr)
+  Hf <- rawfd2dataf(Hh, c(0,1))
+  Jf <- rawfd2dataf(J, c(0,1))
+  Gf <- rawfd2dataf(G, c(0,1))
+  depths.inJ <- depth.function(Hf, Jf, range=range, d=30, order = 2, approx=150)
+  depths.inG <- depth.function(Hf, Gf, range=range, d=30, order = 2, approx=150)
   depy <- depths.inJ$Half_FD
   depx <- depths.inG$Half_FD
   lm.ori <- lm(depy ~ depx)
   b1.ori <- lm.ori$coefficients[2]
   b0.ori <- lm.ori$coefficients[1]
-  stats <- Bootstrapper.od(J, G, B=B, depth.function=depth.function, range=range)
+  stats <- Bootstrapper.od(J, G, B=B, depth.function=depth.function)
   # Extract all statistics from the bootstrapper.
   b0 <- stats$b0
   b1 <- stats$b1
@@ -138,18 +131,16 @@ Tester.od <- function(J, G, B=1000, depth.function=depthf.fd1){
   beta1.std <- sqrt((sum(lm.ori$residuals^2))/((kH-2)*sum_aux))
   T.Test1 <- (b1.ori - 1)/beta1.std
   dist.t1 <- ecdf(t1)
-  neg.T1 <- min(T.Test1, -T.Test1)
-  p1.half.neg <- dist.t1(neg.T1)
-  p1.half.pos <- 1.0 - dist.t1(-neg.T1)
-  p1 <- p1.half.neg + p1.half.neg
+  p1.half1 <- dist.t1(T.Test1)
+  p1.half2 <- 1.0 - p1.half1
+  p1 <- 2*min(p.half1, p.half2)
   beta0.std <- sqrt((sum(lm.ori$residuals^2)*sum(depx^2))/((kH-2)*sum_aux))
   T.Test0 <- b0.ori/beta0.std
   dist.t0 <- ecdf(t0)
-  neg.T0 <- min(T.Test0, -T.Test0)
-  p0.half.neg <- dist.t0(neg.T0)
-  p0.half.pos <- 1.0 - dist.t0(-neg.T0)
-  p0 <- p0.half.neg + p0.half.pos
-  p <- min(p0, p1)
+  p2.half1 <- dist.t0(T.Test0)
+  p2.half2 <- 1 - p2.half1
+  p2 <- 2*min(p2.half1, p2.half2)
+  p <- min(p1, p2)
   # 5% cutoff (2.5% upper and lower).
   t0crit <- quantile(t0, probs=c(0.025, 0.975))
   t1crit <- quantile(t1, probs=c(0.025, 0.975))
