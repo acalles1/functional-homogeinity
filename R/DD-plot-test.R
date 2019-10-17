@@ -124,28 +124,23 @@ Tester <- function(J, G, B=1000, depth.function=depth.FM){
   dist.t1 <- ecdf(t1)
   p1.half1 <- dist.t1(T.Test1)
   p1.half2 <- 1.0 - p1.half1
-  p1 <- 2*min(p.half1, p.half2)
+  p1 <- 2*min(p1.half1, p1.half2)
   beta0.std <- sqrt((sum(lm.ori$residuals^2)*sum(depx^2))/((kH-2)*sum_aux))
   T.Test0 <- b0.ori/beta0.std
   dist.t0 <- ecdf(t0)
   p2.half1 <- dist.t0(T.Test0)
   p2.half2 <- 1 - p2.half1
   p2 <- 2*min(p2.half1, p2.half2)
-  p <- min(p1, p2)
-  # 5% cutoff (2.5% upper and lower).
-  t0crit <- quantile(t0, probs=c(0.025, 0.975))
-  t1crit <- quantile(t1, probs=c(0.025, 0.975))
-  beta0.l <- b0.ori - t0crit[2]*beta0.std
-  beta0.u <- b0.ori - t0crit[1]*beta0.std
-  beta1.l <- b1.ori - t1crit[2]*beta1.std
-  beta1.u <- b1.ori - t1crit[1]*beta1.std
-  res <- t0crit[1] <= T.Test0 && t0crit[2] >= T.Test0 && t1crit[1] <= T.Test1 && t1crit[2] >= T.Test1
+  # ACAAAAA
+  p <- c(p1, p2)
+  po <- sort(p)
+  # Using the holm method
+  res <- po[1] >= 0.025 && po[2] >= 0.05
+  p.new <- p.adjust(p, "holm")
+  p.min <- min(p.new)
   returns <- list()
   returns$res <- res
-  returns$p <- p
-  returns$t0crit <- t0crit
-  returns$t1crit <- t1crit
-  returns$T1 <- T.Test1
-  returns$T0 <- T.Test0
+  returns$p <- p.min
+  #HASTA ACAAAAAA
   return(returns)
 }

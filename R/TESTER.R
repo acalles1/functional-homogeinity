@@ -17,65 +17,69 @@ library(ddalpha)
 
 
 source("/home/cauchy/acalles/functional-homogeinity-master/R/generate_curves.R")
+source("/home/cauchy/acalles/functional-homogeinity-master/R/generate_hitchcock2007.R")
 source("/home/cauchy/acalles/functional-homogeinity-master/R/dd-otherdepths.R")
+source("/home/cauchy/acalles/functional-homogeinity-master/R/DD-plot-test.R")
+source("/home/cauchy/acalles/functional-homogeinity-master/R/homogeinity_flores2018.R")
+
 K <- 100
+#d <- seq(0.05, 0.5, 0.05)
+#n_d <- length(d)
+results.ddrpd <- matrix(0, 6, 6)
+#results.ddfd1 <- numeric(n_d)
+#p.ddfm <- numeric(n_d)
+#p.ddfd1 <- numeric(n_d)
 
-#res_mat <- matrix(0, nrow=6, ncol=6)
-#for (i in 1:6){
-#   for (j in i:6){
-#      print('model0')
-#      print(i)
-#      print('model1')
-#      print(j)
-#      trials <- seq(1:K)
-#      fx1 <- function(trial){
-#         S <- GenerateCurves()
-#         J <- S[[i]]
-#         S <- GenerateCurves()
-#         G <- S[[j]]
-#         resu <- Tester.od(J, G, B=1000)
-#      }
-#      tests1 <- mclapply(trials, fx1, mc.cores=8)
-#      suma1 <- 0
-#      for (k in 1:K){
-#        if (tests1[[k]]$res){
-#           suma1 <- suma1 + 1
-#        }
-#      }
-#      res_mat[i,j] <- 1 - suma1/K
-#      print(res_mat[i,j])
-#   }
-#}
+for (i in 1:6){
+    for (j in i:6){
+        print('modelo 1')
+        print(i)
+        print('modelo 2')
+        print(j)
+        trials <- seq(1:K)
+        fx2 <- function(trial){
+            S <- GenerateCurves()
+            S0 <- S[[i]]
+            J <- fdata(S0)
+            S <- GenerateCurves()
+            S1 <- S[[j]]
+            G <- fdata(S1)
+            resu <- Tester(J, G, B=1000, depth.function=depth.RPD)
+            res <- resu
+        }
+        fx3 <- function(trial){
+            S0 <- Generator()
+            S1 <- Generator(delta=d[i])
+            resu <- Tester.od(S0, S1, B=10, depth.function=depthf.fd1)
+            res <- resu
+        }
+        tests2 <- mclapply(trials, fx2, mc.cores=8)
+        #tests3 <- mclapply(trials, fx3, mc.cores=8)
+        suma1 <- 0
+        #suma2 <- 0
+       # ps1 <- 0
+        #ps2 <- 0
+        for (k in 1:K){
+            if (tests2[[k]]$res){
+                suma1 <- suma1 + 1
+            }
+        #   if (tests3[[k]]$res){
+        #       suma2 <- suma2 + 1
+        #  }
+      #      ps1 <- ps1 + tests2[[k]]$p
+        #  ps2 <- ps2 + tests3[[k]]$p
+        }
+        print('res')
+        results.ddrpd[i, j] <- 1 - suma1/K
+        #results.ddfd1[i] <- 1 - suma2/K
+      #  p.ddfm[i] <- ps1/K
+    #  p.ddfd1[i] <- ps2/K
+        print(results.ddrpd[i, j])
+    # print(results.ddfd1[i])
+   }
+}
 
-#res_mat
-
-#for (i in 1:n_deltas){
-#      print('delta')
-#      print(deltas[i])
-#      trials <- seq(1:K)
-#      fx1 <- function(trial){
-#         S0 <- Generator()
-#         J <- S0
-#         S1 <- Generator(delta=deltas[i])
-#         G <- S1
-#         resu <- Tester(J, G, B=1000)
-#         res <- resu
-#      }
-#      tests1 <- mclapply(trials, fx1, mc.cores=8)
-#      suma1 <- 0
-#     pnow <- 0
-#      for (k in 1:K){
-#        if (tests1[[k]]$res){
-#           suma1 <- suma1 + 1
-#        }
-#        pnow <- pnow + tests1[[k]]$p
-#      }
-#      print('res')
-#      results[i] <- 1 - suma1/K
-#      ps[i] <- pnow/K
-#      print(results[i])
-#      print('p-val')
-#      print(ps[i])
-#}
-
-#results
+#p.ddrpd
+#p.ddfd1
+results.ddrpd
+#results.ddfd1
